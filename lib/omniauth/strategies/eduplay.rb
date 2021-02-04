@@ -13,10 +13,19 @@ module OmniAuth
       option :client_options, {
         :authorize_url => "/portal/oauth/authorize",
         :token_url     => "/portal/oauth/token",
-        :info_url      => "",
+        :info_url      => "/services/user/oauth/userinfo",
       }
 
       option :authorize_options, [:state, :scope, :response_type, :client_id, :redirect_uri]
+
+      uid { raw_info['email'] }
+
+      info do
+        {
+          'name' => raw_info['username'],
+          'email' => raw_info['email'],
+        }
+      end
 
       def authorize_params
         super.tap do |params|
@@ -35,12 +44,8 @@ module OmniAuth
 
       private
 
-      # no info requests as of now
-      def id_info
-        access_token
-      end
-
       def raw_info
+        @raw_info ||= access_token.get(options[:client_options][:info_url], headers: {clientkey: options[:client_secret]}).parsed
       end
 
     end
